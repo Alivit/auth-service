@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '4.0.6'
+    id 'org.springframework.boot' version '4.1.0-RC1'
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -16,10 +16,17 @@ java {
 
 repositories {
     mavenCentral()
+    maven { url = 'https://repo.spring.io/snapshot' }
 }
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.keycloak:keycloak-admin-client:26.0.9'
+    implementation 'org.mapstruct:mapstruct:1.6.3'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

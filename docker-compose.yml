@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  postgres:
+    container_name: keycloak_postgres
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-keycloak}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: keycloak_db
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.6
+    container_name: keycloak
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak_postgres:5432/keycloak_db
+      KC_DB_USER: ${POSTGRES_USER:-keycloak}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin123
+    ports:
+      - "9000:8080"
+    depends_on:
+      - postgres
+    links:
+      - "postgres:postgres"

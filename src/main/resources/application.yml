@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: auth-service
+keycloak:
+  auth-server-url: http://localhost:9000
+  realm: demo
+  client-id: messaging-client
+  client-secret: 4953cb21-7dce-43cf-831d-004495a05509

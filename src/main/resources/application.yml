@@ -1,8 +1,12 @@
 spring:
   application:
     name: auth-service
+  grpc:
+    server:
+      port: 9090
 keycloak:
-  auth-server-url: http://localhost:9000
-  realm: demo
-  client-id: messaging-client
-  client-secret: 4953cb21-7dce-43cf-831d-004495a05509
+  auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL}
+  base-url: ${KEYCLOAK_BASE_URL}
+  realm: ${KEYCLOAK_REALM}
+  client-id: ${KEYCLOAK_CLIENT_ID}
+  client-secret: ${KEYCLOAK_CLIENT_SECRET}

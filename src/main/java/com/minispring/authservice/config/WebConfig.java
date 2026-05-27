@@ -14,8 +14,8 @@ public class WebConfig {
     @Value("${keycloak.auth-server-url:http://localhost:9000}")
     private String authServerUrl;
 
-    @Value("${keycloak.realm:demo}")
-    private String realm;
+    @Value("${keycloak.base-url}")
+    private String baseUrl;
 
     @Value("${keycloak.client-id}")
     private String clientId;
@@ -23,17 +23,20 @@ public class WebConfig {
     @Value("${keycloak.client-secret}")
     private String clientSecret;
 
+    @Value("${keycloak.realm}")
+    private String realm;
+
     @Bean
     public RestClient restClient() {
         return RestClient.builder()
-                .baseUrl(authServerUrl + "/realms/" + realm + "/protocol/openid-connect")
+                .baseUrl(authServerUrl)
                 .build();
     }
 
     @Bean
     public Keycloak keycloakClient() {
         return KeycloakBuilder.builder()
-                .serverUrl(authServerUrl)
+                .serverUrl(baseUrl)
                 .realm(realm)
                 .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
                 .clientId(clientId)

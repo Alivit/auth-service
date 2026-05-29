@@ -8,6 +8,7 @@ option java_outer_classname = "UserSyncProto";
 
 service AuthGrpcService {
   rpc ChangeStatus (UserStatusRequest) returns (UserStatusResponse);
+  rpc DeleteUser (DeleteUserRequest) returns (DeleteUserResponse);
 }
 
 message UserStatusRequest {
@@ -16,5 +17,13 @@ message UserStatusRequest {
 }
 
 message UserStatusResponse {
+  bool success = 1;
+}
+
+message DeleteUserRequest {
+  string userId = 1;
+}
+
+message DeleteUserResponse {
   bool success = 1;
 }

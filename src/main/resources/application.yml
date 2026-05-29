@@ -1,12 +1,65 @@
 spring:
   application:
     name: auth-service
+  threads:
+    virtual:
+      enabled: true
   grpc:
     server:
-      port: 9090
+      port: ${AUTH_GRPC_SERVER_PORT}
+      reflection:
+        enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://keycloak:${KC_HTTPS_PORT}/realms/${APP_REALM}/protocol/openid-connect/certs
+          issuer-uri: https://keycloak:${KC_HTTPS_PORT}/realms/${APP_REALM}
+          audience: ${APP_CLIENT_ID}
+  ssl:
+    bundle:
+      pem:
+        keycloak-mtls:
+          keystore:
+            certificate: "file:/app/certs/auth-client.crt"
+            private-key: "file:/app/certs/auth-client.key"
+          truststore:
+            certificate: "file:/app/certs/root-ca.crt"
 keycloak:
-  auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL}
-  base-url: ${KEYCLOAK_BASE_URL}
-  realm: ${KEYCLOAK_REALM}
-  client-id: ${KEYCLOAK_CLIENT_ID}
-  client-secret: ${KEYCLOAK_CLIENT_SECRET}
+  auth-server-url: https://keycloak:${KC_HTTPS_PORT}/realms/${APP_REALM}/protocol/openid-connect
+  base-url: https://keycloak:${KC_HTTPS_PORT}
+  realm: ${APP_REALM}
+  client-id: ${APP_CLIENT_ID}
+resilience4j:
+  retry:
+    instances:
+      keycloakDelete:
+        maxAttempts: 4
+        waitDuration: 3s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retryExceptions:
+          - jakarta.ws.rs.WebApplicationException
+          - java.lang.RuntimeException
+logging:
+  level:
+    root: INFO
+    com.minispring: TRACE
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+    org.springframework.grpc: DEBUG
+    io.grpc: DEBUG
+    liquibase: INFO
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+  info:
+    env:
+      enabled: true

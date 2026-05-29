@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: auth-service
+  grpc:
+    server:
+      port: 9090
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://localhost:8443/realms/dev/protocol/openid-connect/certs
+          issuer-uri: https://localhost:8443/realms/dev
+          audience: test-auth-client
+  ssl:
+    bundle:
+      pem:
+        keycloak-mtls:
+          keystore:
+            certificate: "classpath:certs/auth-client.crt"
+            private-key: "classpath:certs/auth-client.key"
+          truststore:
+            certificate: "classpath:certs/root-ca.crt"
+
+keycloak:
+  auth-server-url: https://localhost:8443/realms/dev/protocol/openid-connect
+  base-url: https://localhost:8443
+  realm: dev
+  client-id: test-auth-client

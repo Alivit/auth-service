@@ -1,62 +1,91 @@
 services:
+
   keycloak-postgres:
     container_name: keycloak_postgres
     image: postgres:18-alpine
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_DB: ${AUTH_DB_NAME}
+      POSTGRES_USER: ${AUTH_DB_ROOT_USER}
+      POSTGRES_PASSWORD: ${AUTH_DB_ROOT_PASSWORD}
+      AUTH_DB_USER: ${AUTH_DB_USERNAME}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      AUTH_DB_SCHEMA: ${AUTH_DB_SCHEMA}
     ports:
-      - "${DB_EXTERNAL_PORT}:5432"
+      - "${AUTH_POSTGRES_PORT}:5432"
+    volumes:
+      - ./docker-init/init-keycloak-user.sh:/docker-entrypoint-initdb.d/init-keycloak-user.sh
+      - keycloak_pg_data:/var/lib/postgresql
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "${DB_USER}", "-d", "${DB_NAME}" ]
-      interval: 3s
-      timeout: 3s
-      retries: 10
+      test: [ "CMD", "pg_isready", "-U", "${AUTH_DB_ROOT_USER}", "-d", "${AUTH_DB_NAME}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: [ "postgres", "-c", "max_connections=100", "-c", "shared_buffers=512MB", "-c", "synchronous_commit=off", "-c", "work_mem=32MB"]
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.6
     container_name: keycloak
-    command: start-dev --import-realm
+    entrypoint: [ "/bin/bash", "-c" ]
+    command: >
+      "/opt/keycloak/bin/kc.sh build --db=postgres && 
+       /opt/keycloak/bin/kc.sh start --import-realm --optimized"
+    env_file:
+      - '.env'
     environment:
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://keycloak_postgres:5432/keycloak_db
-      KC_DB_USER: ${DB_USER}
-      KC_DB_PASSWORD: ${DB_PASSWORD}
+      KC_DB_URL: jdbc:postgresql://keycloak_postgres:5432/${AUTH_DB_NAME}?currentSchema=${AUTH_DB_SCHEMA}
+      KC_DB_USERNAME: ${AUTH_DB_USERNAME}
+      KC_DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      KC_HTTPS_PORT: ${KC_HTTPS_PORT}
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN_USER}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
-      KC_DB_POOL_INITIAL_SIZE: 15
-      KC_DB_POOL_MIN_SIZE: 15
-      KC_DB_POOL_MAX_SIZE: 15
-      KC_TRANSACTION_XA_ENABLED: "false"
-      KC_HOSTNAME_STRICT: "false"
-      KC_FEATURES: "http-optimized-serializers"
-      JAVA_OPTS_APPEND: "-Xms512m -Xmx1024m"
+      KC_TRANSACTION_XA_ENABLED: ${KC_TRANSACTION_XA_ENABLED}
+      KC_HOSTNAME_STRICT: ${KC_HOSTNAME_STRICT}
+      KC_FEATURES: ${KC_FEATURES}
+      KC_HTTPS_CERTIFICATE_FILE: ${KC_HTTPS_CERTIFICATE_FILE}
+      KC_HTTPS_CERTIFICATE_KEY_FILE: ${KC_HTTPS_CERTIFICATE_KEY_FILE}
+      KC_TRUSTSTORE_PATHS: ${KC_TRUSTSTORE_PATHS}
+      KC_HTTPS_CLIENT_AUTH: request
+      JAVA_OPTS_APPEND: "-Xms1024m -Xmx2048m -XX:MetaspaceSize=256M -XX:MaxMetaspaceSize=512M -Dkeycloak.migration.replace-placeholders=true"
     ports:
-      - "${KEYCLOAK_EXTERNAL_PORT}:8080"
+      - "${KC_HTTPS_PORT}:${KC_HTTPS_PORT}"
     volumes:
-      - ./keycloak/realm-export.json:/opt/keycloak/data/import/dev-realm.json:ro
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - ./certs/keycloak.crt:/opt/keycloak/conf/keycloak.crt:ro
+      - ./certs/keycloak.key:/opt/keycloak/conf/keycloak.key:ro
+      - ./certs/root-ca.crt:/opt/keycloak/conf/root-ca.crt:ro
     depends_on:
       keycloak-postgres:
         condition: service_healthy
-    links:
-      - "keycloak-postgres:postgres"
+    healthcheck:
+      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/${KC_HTTPS_PORT} || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   auth-service:
     container_name: auth-service
     build:
       context: .
       dockerfile: Dockerfile
-    environment:
-      - SERVER_PORT=8082
     ports:
-      - "${AUTH_SERVICE_EXTERNAL_PORT}:8082"
-      - "9090:9090"
+      - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
+      - "${AUTH_GRPC_SERVER_PORT}:${AUTH_GRPC_SERVER_PORT}"
     env_file:
       - '.env'
+    environment:
+      SERVER_PORT: ${AUTH_SERVICE_PORT}
+      GRPC_SERVER_PORT: ${AUTH_GRPC_SERVER_PORT}
+    volumes:
+      - ./certs:/app/certs:ro
     depends_on:
-      - keycloak
+      keycloak:
+        condition: service_healthy
+
 networks:
   default:
-    name: minispring-network
+    name: innowise-network
+
+volumes:
+  keycloak_pg_data:

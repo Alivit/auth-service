@@ -4,7 +4,7 @@ import com.minispring.authservice.dto.LoginRequestDto;
 import com.minispring.authservice.dto.RegisterRequestDto;
 import com.minispring.authservice.dto.RegisterResponseDto;
 import com.minispring.authservice.dto.TokenResponseDto;
-import com.minispring.authservice.dto.TokenValidationResponse;
+import com.minispring.authservice.dto.TokenValidationResponseDto;
 
 import java.util.UUID;
 
@@ -15,7 +15,7 @@ public interface KeycloakService {
 
     TokenResponseDto refreshToken(String refreshToken);
 
-    TokenValidationResponse validateToken(String token);
+    TokenValidationResponseDto validateToken(String token);
 
     void changeUserStatus(UUID userId, boolean enabled);
 }

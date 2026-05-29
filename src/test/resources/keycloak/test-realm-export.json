@@ -58,20 +58,20 @@
   ],
   "clients": [
     {
-      "clientId": "${APP_CLIENT_ID}",
+      "clientId": "auth-client",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": false,
       "bearerOnly": false,
       "serviceAccountsEnabled": true,
       "directAccessGrantsEnabled": true,
-      "secret": "${APP_CLIENT_SECRET}",
+      "secret": "4953cb21-7dce-43cf-831d-004495a05509",
       "redirectUris": [
-        "${APP_REDIRECT_URI_1}",
-        "${APP_REDIRECT_URI_2}"
+        "http://localhost:8081/*",
+        "http://auth-service:8081/*"
       ],
       "webOrigins": [
-        "${APP_WEB_ORIGIN}"
+        "http://localhost:8081"
       ],
       "defaultClientScopes": [
         "basic",
@@ -88,7 +88,7 @@
           "protocolMapper": "oidc-audience-mapper",
           "consentRequired": false,
           "config": {
-            "included.client.audience": "${APP_CLIENT_ID}",
+            "included.client.audience": "auth-client",
             "id.token.claim": "false",
             "access.token.claim": "true",
             "userinfo.token.claim": "false"
@@ -101,7 +101,7 @@
     {
       "username": "service-account-auth-client",
       "enabled": true,
-      "serviceAccountClientId": "${APP_CLIENT_ID}",
+      "serviceAccountClientId": "auth-client",
       "clientRoles": {
         "realm-management": [
           "manage-users"
@@ -109,9 +109,9 @@
       }
     },
     {
-      "username": "${APP_ADMIN_USERNAME}",
+      "username": "TestAdmin",
       "enabled": true,
-      "email": "${APP_ADMIN_EMAIL}",
+      "email": "testadmin@company.com",
       "emailVerified": true,
       "groups": [
         "/realm-administrators"
@@ -119,13 +119,37 @@
       "credentials": [
         {
           "type": "password",
-          "value": "${APP_ADMIN_PASSWORD}",
-          "temporary": true
+          "value": "TestPassword123.",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "Automated Test Device",
+          "secretData": "{\"value\":\"GEZDGNBVGY3TQOJQ\"}",
+          "credentialData": "{\"subType\":\"totp\",\"digits\":6,\"period\":30,\"algorithm\":\"HmacSHA1\"}"
         }
+      ]
+    },
+    {
+      "username": "TestAdminTwo",
+      "enabled": true,
+      "email": "testadmintwo@company.com",
+      "emailVerified": true,
+      "groups": [
+        "/realm-administrators"
       ],
-      "requiredActions": [
-        "UPDATE_PASSWORD",
-        "CONFIGURE_TOTP"
+      "credentials": [
+        {
+          "type": "password",
+          "value": "TestPassword123.",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "Automated Test Device",
+          "secretData": "{\"value\":\"GEZDGNBVGY3TQOJQ\"}",
+          "credentialData": "{\"subType\":\"totp\",\"digits\":6,\"period\":30,\"algorithm\":\"HmacSHA1\"}"
+        }
       ]
     }
   ],

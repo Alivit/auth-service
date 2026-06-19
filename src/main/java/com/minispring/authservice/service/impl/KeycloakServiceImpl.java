@@ -1,15 +1,16 @@
 package com.minispring.authservice.service.impl;
 
+import com.minispring.authservice.dto.KeycloakIntrospectResponseDto;
 import com.minispring.authservice.dto.LoginRequestDto;
 import com.minispring.authservice.dto.RegisterRequestDto;
 import com.minispring.authservice.dto.RegisterResponseDto;
 import com.minispring.authservice.dto.TokenResponseDto;
-import com.minispring.authservice.dto.TokenValidationResponse;
+import com.minispring.authservice.dto.TokenValidationResponseDto;
 import com.minispring.authservice.exception.InvalidCredentialsException;
 import com.minispring.authservice.exception.ResourceAlreadyExistsException;
 import com.minispring.authservice.exception.ResourceNotFoundException;
 import com.minispring.authservice.exception.TokenExpiredException;
-import com.minispring.authservice.mapper.KeycloakUserMapper;
+import com.minispring.authservice.mapper.KeycloakMapper;
 import com.minispring.authservice.service.KeycloakService;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
@@ -29,6 +30,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
@@ -44,7 +46,7 @@ public class KeycloakServiceImpl implements KeycloakService {
 
     private final RestClient restClient;
     private final Keycloak keycloakClient;
-    private final KeycloakUserMapper mapper;
+    private final KeycloakMapper mapper;
 
     @Value("${keycloak.client-id}")
     private String clientId;
@@ -83,8 +85,7 @@ public class KeycloakServiceImpl implements KeycloakService {
                     .body(TokenResponseDto.class);
 
         } catch (HttpClientErrorException.BadRequest ex) {
-            Map<String, String> error = ex.getResponseBodyAs(new ParameterizedTypeReference<>() {
-            });
+            Map<String, String> error = ex.getResponseBodyAs(new ParameterizedTypeReference<>() {});
             if (error != null && "invalid_grant".equals(error.get("error"))) {
                 throw new InvalidCredentialsException(INVALID_CREDENTIALS);
             }
@@ -136,15 +137,26 @@ public class KeycloakServiceImpl implements KeycloakService {
         }
     }
 
-    public TokenValidationResponse validateToken(String token) {
-        MultiValueMap<String, String> keycloakRequest =
-                mapper.dtoToTokenRequest(token, clientId, clientSecret);
+    public TokenValidationResponseDto validateToken(String token) {
+        MultiValueMap<String, String> keycloakRequest = mapper.dtoToTokenRequest(token, clientId, clientSecret);
 
-        return restClient.post()
-                .uri("/token/introspect")
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .body(keycloakRequest)
-                .retrieve()
-                .body(TokenValidationResponse.class);
+        try {
+            KeycloakIntrospectResponseDto responseDto = restClient.post()
+                    .uri("/token/introspect")
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(keycloakRequest)
+                    .retrieve()
+                    .body(KeycloakIntrospectResponseDto.class);
+
+            if (responseDto == null || !responseDto.active()) {
+                return new TokenValidationResponseDto(null, null, null, false, Collections.emptySet());
+            }
+
+            return mapper.toTokenValidationResponse(responseDto);
+
+        } catch (Exception ex) {
+            log.error("Failed to introspect token in Keycloak", ex);
+            return new TokenValidationResponseDto(null, null, null, false, Collections.emptySet());
+        }
     }
 }

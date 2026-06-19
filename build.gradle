@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '4.1.0-RC1'
+    id 'org.springframework.boot' version '4.0.6'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'com.google.protobuf' version "0.10.0"
 }
@@ -23,6 +23,8 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
     implementation 'org.springframework.grpc:spring-grpc-server-spring-boot-starter:1.0.3'
     implementation 'com.google.protobuf:protobuf-java:4.35.0'
     implementation 'com.google.protobuf:protobuf-java-util:4.35.0'
@@ -32,7 +34,13 @@ dependencies {
     compileOnly 'jakarta.annotation:jakarta.annotation-api:3.0.0'
     annotationProcessor 'org.projectlombok:lombok'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+    implementation platform('org.instancio:instancio-bom:6.0.0-RC2')
+    testImplementation 'org.instancio:instancio-core'
+    testImplementation 'org.instancio:instancio-junit'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.testcontainers:junit-jupiter:1.19.7'
+    testImplementation 'com.github.dasniko:testcontainers-keycloak:4.2.1'
+    testImplementation 'org.testcontainers:testcontainers-postgresql:2.0.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
